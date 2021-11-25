@@ -32,11 +32,6 @@ jobs:
         run: make
         env:
           BUILD_TYPE: RELEASE
-      - name: "Upload zenoh-pico package"
-        uses: actions/upload-artifact@master
-        with:
-          name: ${{ steps.package.outputs.LIB_PKG_NAME }}
-          path: ${{ steps.package.outputs.LIB_PKG_NAME }}
       - name: Packaging
         id: package
         shell: bash
