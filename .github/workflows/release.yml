@@ -1,0 +1,100 @@
+#
+# Copyright (c) 2017, 2020 ADLINK Technology Inc.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0, or the Apache License, Version 2.0
+# which is available at https://www.apache.org/licenses/LICENSE-2.0.
+#
+# SPDX-License-Identifier: EPL-2.0 OR Apache-2.0
+#
+# Contributors:
+#   ADLINK zenoh team, <zenoh@adlink-labs.tech>
+#
+name: Release
+
+on:
+  push:
+    branches: ["test-action-release"]
+  release:
+    types: [published]
+  schedule:
+    - cron: "0 0 * * 1-5"
+  workflow_dispatch:
+
+jobs:
+  macos-build:
+    name: MacOS build
+    runs-on: macos-10.15
+    steps:
+      - uses: actions/checkout@v2
+      - name: MacOS build
+        run: make
+        env:
+          BUILD_TYPE: RELEASE
+      - name: "Upload zenoh-pico package"
+        uses: actions/upload-artifact@master
+        with:
+          name: ${{ steps.package.outputs.LIB_PKG_NAME }}
+          path: ${{ steps.package.outputs.LIB_PKG_NAME }}
+      - name: Packaging
+        id: package
+        shell: bash
+        run: |
+          cd build
+          LIB_PKG_NAME=${PWD}/macos-x64.zip
+          echo "Packaging ${LIB_PKG_NAME}:"
+          cd libs && zip ${LIB_PKG_NAME} * && cd -
+          cd .. && zip -r ${LIB_PKG_NAME} include && cd -
+          EXP_PKG_NAME=${PWD}/macos-x64-examples.zip
+          echo "Packaging ${EXP_PKG_NAME}:"
+          cd examples && zip ${EXP_PKG_NAME} * && cd -
+      - name: "Upload x86_64 macos package"
+        uses: actions/upload-artifact@master
+        with:
+          name: macos
+          path: |
+            build/*.zip
+
+  linux-builds:
+    name: Linux crossbuilds
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Linux crossbuilds
+        run: make crossbuilds
+        env:
+          BUILD_TYPE: RELEASE
+      - name: Packaging
+        id: package
+        shell: bash
+        run: |
+          cd crossbuilds
+          ls -al
+          for TARGET in *; do
+            LIB_PKG_NAME=${PWD}/${TARGET}.zip
+            echo "Packaging ${LIB_PKG_NAME}:"
+            cd ${TARGET}/libs && zip ${LIB_PKG_NAME} * && cd -
+            cd .. && zip -r ${LIB_PKG_NAME} include && cd -
+
+            DEB_PKG_NAME=${PWD}/${TARGET}-deb-pkgs.zip
+            RPM_PKG_NAME=${PWD}/${TARGET}-rpm-pkgs.zip
+            cd ${TARGET}/packages
+            echo "Packaging ${DEB_PKG_NAME}:"
+            zip ${DEB_PKG_NAME} *.deb
+            echo "Packaging ${RPM_PKG_NAME}:"
+            zip ${RPM_PKG_NAME} *.rpm
+            cd -
+
+            EXP_PKG_NAME=${PWD}/${TARGET}-examples.zip
+            echo "Packaging ${EXP_PKG_NAME}:"
+            cd ${TARGET}/examples && zip ${EXP_PKG_NAME} * && cd -
+          done
+          cd ..
+      - name: "Upload crossbuilds packages"
+        uses: actions/upload-artifact@master
+        with:
+          name: crossbuilds
+          path: |
+            crossbuilds/*.zip
+            crossbuilds/linux-x64/packages/*-src-*.tar.gz

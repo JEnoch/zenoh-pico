@@ -1,5 +1,6 @@
 # CMake
 build
+crossbuilds
 
 # vscode
 .vscode 

@@ -70,10 +70,9 @@ endif
 crossbuild: check-docker
 	@echo "FROM dockcross/$(CROSSIMG)\nRUN apt-get update && apt-get -y install rpm" | docker build -t $(CROSSIMG_PREFIX)$(CROSSIMG) -
 	docker run --rm -v $(ROOT_DIR):/workdir -w /workdir $(CROSSIMG_PREFIX)$(CROSSIMG) bash -c "\
-		cmake $(CMAKE_OPT) -DPACKAGING=DEB,RPM -DDEBARCH=$(DEBARCH) -DRPMARCH=$(RPMARCH) -B$(CROSSBUILD_DIR)/$(CROSSIMG) && \
-		make VERBOSE=1 -C$(CROSSBUILD_DIR)/$(CROSSIMG) all package"
+		cmake $(CMAKE_OPT) -DPACKAGING=DEB,RPM,SRC -DDEBARCH=$(DEBARCH) -DRPMARCH=$(RPMARCH) -B$(CROSSBUILD_DIR)/$(CROSSIMG) && \
+		make VERBOSE=1 -C$(CROSSBUILD_DIR)/$(CROSSIMG) all package package_source"
 	docker rmi $(CROSSIMG_PREFIX)$(CROSSIMG)
-	docker rmi dockcross/$(CROSSIMG)
 
 linux-armv5:
 	CROSSIMG=$@ DEBARCH=arm RPMARCH=arm make crossbuild
