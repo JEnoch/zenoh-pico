@@ -64,16 +64,18 @@ jobs:
         id: package
         shell: bash
         run: |
+          PKGS_DIR=${PWD}/packages
+          mkdir ${PKGS_DIR}
           cd crossbuilds
           ls -al
           for TARGET in *; do
-            LIB_PKG_NAME=${PWD}/${TARGET}.zip
+            LIB_PKG_NAME=${PKGS_DIR}/${TARGET}.zip
             echo "Packaging ${LIB_PKG_NAME}:"
             cd ${TARGET}/libs && zip ${LIB_PKG_NAME} * && cd -
             cd .. && zip -r ${LIB_PKG_NAME} include && cd -
 
-            DEB_PKG_NAME=${PWD}/${TARGET}-deb-pkgs.zip
-            RPM_PKG_NAME=${PWD}/${TARGET}-rpm-pkgs.zip
+            DEB_PKG_NAME=${PKGS_DIR}/${TARGET}-deb-pkgs.zip
+            RPM_PKG_NAME=${PKGS_DIR}/${TARGET}-rpm-pkgs.zip
             cd ${TARGET}/packages
             echo "Packaging ${DEB_PKG_NAME}:"
             zip ${DEB_PKG_NAME} *.deb
@@ -81,7 +83,7 @@ jobs:
             zip ${RPM_PKG_NAME} *.rpm
             cd -
 
-            EXP_PKG_NAME=${PWD}/${TARGET}-examples.zip
+            EXP_PKG_NAME=${PKGS_DIR}/${TARGET}-examples.zip
             echo "Packaging ${EXP_PKG_NAME}:"
             cd ${TARGET}/examples && zip ${EXP_PKG_NAME} * && cd -
           done
@@ -91,5 +93,5 @@ jobs:
         with:
           name: crossbuilds
           path: |
-            crossbuilds/*.zip
+            packages/*.zip
             crossbuilds/linux-x64/packages/*-src-*.tar.gz
