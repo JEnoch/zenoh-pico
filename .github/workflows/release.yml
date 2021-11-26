@@ -92,7 +92,7 @@ jobs:
 
           EXP_PKG_NAME=${PWD}/macos-x64-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-examples.zip
           echo "Packaging ${EXP_PKG_NAME}:"
-          cd build/examples && zip ../../${EXP_PKG_NAME} * && cd -
+          cd build/examples && zip ${EXP_PKG_NAME} * && cd -
           echo ::set-output name=EXP_PKG_NAME::"${EXP_PKG_NAME}"
       - name: "Upload x86_64 macos package"
         uses: actions/upload-artifact@master
@@ -120,27 +120,27 @@ jobs:
         shell: bash
         run: |
           TARGET=${{ matrix.target }}
-          LIB_PKG_NAME=${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}.zip
-          DEB_PKG_NAME=${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-deb-pkgs.zip
-          RPM_PKG_NAME=${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-rpm-pkgs.zip
-          EXP_PKG_NAME=${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-examples.zip
+          LIB_PKG_NAME=${PWD}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}.zip
+          DEB_PKG_NAME=${PWD}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-deb-pkgs.zip
+          RPM_PKG_NAME=${PWD}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-rpm-pkgs.zip
+          EXP_PKG_NAME=${PWD}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-examples.zip
 
           echo "Packaging ${LIB_PKG_NAME}:"
-          cd crossbuilds/${TARGET} && zip -r ../../${LIB_PKG_NAME} lib && cd -
+          cd crossbuilds/${TARGET} && zip -r ${LIB_PKG_NAME} lib && cd -
           zip -r ${LIB_PKG_NAME} include
           echo ::set-output name=LIB_PKG_NAME::"${LIB_PKG_NAME}"
 
           cd crossbuilds/${TARGET}/packages
           echo "Packaging ${DEB_PKG_NAME}:"
-          zip ../../../${DEB_PKG_NAME} *.deb
+          zip ${DEB_PKG_NAME} *.deb
           echo ::set-output name=DEB_PKG_NAME::"${DEB_PKG_NAME}"
           echo "Packaging ${RPM_PKG_NAME}:"
-          zip ../../../${RPM_PKG_NAME} *.rpm
+          zip ${RPM_PKG_NAME} *.rpm
           echo ::set-output name=RPM_PKG_NAME::"${RPM_PKG_NAME}"
           cd -
 
           echo "Packaging ${EXP_PKG_NAME}:"
-          cd crossbuilds/${TARGET}/examples && zip ../../../${EXP_PKG_NAME} * && cd -
+          cd crossbuilds/${TARGET}/examples && zip ${EXP_PKG_NAME} * && cd -
           echo ::set-output name=EXP_PKG_NAME::"${EXP_PKG_NAME}"
       - name: "Upload packages"
         uses: actions/upload-artifact@master
