@@ -36,16 +36,16 @@ jobs:
         id: package
         shell: bash
         run: |
-          LIB_PKG_NAME=macos-x64.zip
+          LIB_PKG_NAME=${PWD}/macos-x64.zip
           echo "Packaging ${LIB_PKG_NAME}:"
-          cd build && zip ../${LIB_PKG_NAME} lib && cd -
+          cd build && zip -r ${LIB_PKG_NAME} lib && cd -
           zip -r ${LIB_PKG_NAME} include
           echo ::set-output name=LIB_PKG_NAME::"${LIB_PKG_NAME}"
 
           EXP_PKG_NAME=macos-x64-examples.zip
           echo "Packaging ${EXP_PKG_NAME}:"
           cd build/examples && zip ../../${EXP_PKG_NAME} * && cd -
-          echo ::set-output name=LIB_PKG_NAME::"${EXP_PKG_NAME}"
+          echo ::set-output name=EXP_PKG_NAME::"${EXP_PKG_NAME}"
       - name: "Upload x86_64 macos package"
         uses: actions/upload-artifact@master
         with:
@@ -76,7 +76,7 @@ jobs:
           for TARGET in *; do
             LIB_PKG_NAME=${BASE_DIR}/${TARGET}.zip
             echo "Packaging ${LIB_PKG_NAME}:"
-            cd ${TARGET} && zip ${LIB_PKG_NAME} lib && cd -
+            cd ${TARGET} && zip -r ${LIB_PKG_NAME} lib && cd -
             cd .. && zip -r ${LIB_PKG_NAME} include && cd -
 
             DEB_PKG_NAME=${BASE_DIR}/${TARGET}-deb-pkgs.zip
