@@ -23,6 +23,45 @@ on:
   workflow_dispatch:
 
 jobs:
+  preps:
+    name: Preparation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Environment setup
+        id: env
+        shell: bash
+        run: |
+          echo "GITHUB_REF=${GITHUB_REF}"
+          echo "GITHUB_SHA=${GITHUB_SHA:0:8}"
+          GIT_BRANCH=`[[ $GITHUB_REF =~ ^refs/heads/.* ]] && echo ${GITHUB_REF/refs\/heads\//} || true`
+          echo "GIT_BRANCH=${GIT_BRANCH}"
+          echo ::set-output name=GIT_BRANCH::"${GIT_BRANCH}"
+          GIT_TAG=`[[ $GITHUB_REF =~ ^refs/tags/.* ]] && echo ${GITHUB_REF/refs\/tags\//} || true`
+          echo "GIT_TAG=${GIT_TAG}"
+          echo ::set-output name=GIT_TAG::"${GIT_TAG}"
+
+          ZENOH_VERSION=$(sed -n 's/^project(libzenohpico VERSION \(.*\) LANGUAGES C)/\1/p' CMakeLists.txt | head -n1)
+          echo "ZENOH_VERSION=${ZENOH_VERSION}"
+          echo ::set-output name=ZENOH_VERSION::"${ZENOH_VERSION}"
+          if [ -n "${GIT_TAG}" ]; then
+            IS_RELEASE="true"
+            echo "IS_RELEASE=${IS_RELEASE}"
+            echo ::set-output name=IS_RELEASE::"${IS_RELEASE}"
+            PKG_VERSION=${ZENOH_VERSION}
+          elif [ -n "${GIT_BRANCH}" ]; then
+            PKG_VERSION=${GIT_BRANCH}-${GITHUB_SHA:0:8}
+          else
+            PKG_VERSION=${ZENOH_VERSION}-${GITHUB_SHA:0:8}
+          fi
+          echo "PKG_VERSION=${PKG_VERSION}"
+          echo ::set-output name=PKG_VERSION::"${PKG_VERSION}"
+    outputs:
+      GIT_BRANCH: ${{ steps.env.outputs.GIT_BRANCH }}
+      GIT_TAG: ${{ steps.env.outputs.GIT_TAG }}
+      IS_RELEASE: ${{ steps.env.outputs.IS_RELEASE }}
+      ZENOH_VERSION: ${{ steps.env.outputs.ZENOH_VERSION }}
+      PKG_VERSION: ${{ steps.env.outputs.PKG_VERSION }}
+
   macos-build:
     name: MacOS build
     runs-on: macos-10.15
@@ -36,13 +75,13 @@ jobs:
         id: package
         shell: bash
         run: |
-          LIB_PKG_NAME=${PWD}/macos-x64.zip
+          LIB_PKG_NAME=${PWD}/macos-x64-zenoh-pico-${{ steps.env.outputs.PKG_VERSION }}.zip
           echo "Packaging ${LIB_PKG_NAME}:"
           cd build && zip -r ${LIB_PKG_NAME} lib && cd -
           zip -r ${LIB_PKG_NAME} include
           echo ::set-output name=LIB_PKG_NAME::"${LIB_PKG_NAME}"
 
-          EXP_PKG_NAME=macos-x64-examples.zip
+          EXP_PKG_NAME=${PWD}/macos-x64-zenoh-pico-${{ steps.env.outputs.PKG_VERSION }}-examples.zip
           echo "Packaging ${EXP_PKG_NAME}:"
           cd build/examples && zip ../../${EXP_PKG_NAME} * && cd -
           echo ::set-output name=EXP_PKG_NAME::"${EXP_PKG_NAME}"
@@ -74,13 +113,13 @@ jobs:
           cd crossbuilds
           ls -al
           for TARGET in *; do
-            LIB_PKG_NAME=${BASE_DIR}/${TARGET}.zip
+            LIB_PKG_NAME=${BASE_DIR}/${TARGET}-zenoh-pico-${{ steps.env.outputs.PKG_VERSION }}.zip
             echo "Packaging ${LIB_PKG_NAME}:"
             cd ${TARGET} && zip -r ${LIB_PKG_NAME} lib && cd -
             cd .. && zip -r ${LIB_PKG_NAME} include && cd -
 
-            DEB_PKG_NAME=${BASE_DIR}/${TARGET}-deb-pkgs.zip
-            RPM_PKG_NAME=${BASE_DIR}/${TARGET}-rpm-pkgs.zip
+            DEB_PKG_NAME=${BASE_DIR}/${TARGET}-zenoh-pico-${{ steps.env.outputs.PKG_VERSION }}-deb-pkgs.zip
+            RPM_PKG_NAME=${BASE_DIR}/${TARGET}-zenoh-pico-${{ steps.env.outputs.PKG_VERSION }}-rpm-pkgs.zip
             cd ${TARGET}/packages
             echo "Packaging ${DEB_PKG_NAME}:"
             zip ${DEB_PKG_NAME} *.deb
@@ -88,7 +127,7 @@ jobs:
             zip ${RPM_PKG_NAME} *.rpm
             cd -
 
-            EXP_PKG_NAME=${BASE_DIR}/${TARGET}-examples.zip
+            EXP_PKG_NAME=${BASE_DIR}/${TARGET}-zenoh-pico-${{ steps.env.outputs.PKG_VERSION }}-examples.zip
             echo "Packaging ${EXP_PKG_NAME}:"
             cd ${TARGET}/examples && zip ${EXP_PKG_NAME} * && cd -
           done
