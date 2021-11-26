@@ -97,7 +97,7 @@ jobs:
       - name: "Upload x86_64 macos package"
         uses: actions/upload-artifact@master
         with:
-          name: macos
+          name: macos-x64
           path: |
             ${{ steps.package.outputs.LIB_PKG_NAME }}
             ${{ steps.package.outputs.EXP_PKG_NAME }}
@@ -120,25 +120,24 @@ jobs:
         shell: bash
         run: |
           TARGET=${{ matrix.target }}
-          LIB_PKG_NAME=${PWD}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}.zip
-          DEB_PKG_NAME=${PWD}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-deb-pkgs.zip
-          RPM_PKG_NAME=${PWD}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-rpm-pkgs.zip
-          EXP_PKG_NAME=${PWD}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-examples.zip
-          cd crossbuilds
+          LIB_PKG_NAME=${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}.zip
+          DEB_PKG_NAME=${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-deb-pkgs.zip
+          RPM_PKG_NAME=${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-rpm-pkgs.zip
+          EXP_PKG_NAME=${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-examples.zip
 
           echo "Packaging ${LIB_PKG_NAME}:"
-          cd ${TARGET} && zip -r ${LIB_PKG_NAME} lib && cd -
-          cd .. && zip -r ${LIB_PKG_NAME} include && cd -
+          cd crossbuilds/${TARGET} && zip -r ../../${LIB_PKG_NAME} lib && cd -
+          zip -r ${LIB_PKG_NAME} include
 
-          cd ${TARGET}/packages 
+          cd crossbuilds/${TARGET}/packages 
           echo "Packaging ${DEB_PKG_NAME}:"
-          zip ${DEB_PKG_NAME} *.deb
+          zip ../../../${DEB_PKG_NAME} *.deb
           echo "Packaging ${RPM_PKG_NAME}:"
-          zip ${RPM_PKG_NAME} *.rpm
+          zip ../../../${RPM_PKG_NAME} *.rpm
           cd -
 
           echo "Packaging ${EXP_PKG_NAME}:"
-          cd ${TARGET}/examples && zip ${EXP_PKG_NAME} * && cd -
+          cd crossbuilds/${TARGET}/examples && zip ../../../${EXP_PKG_NAME} * && cd -
       - name: "Upload packages"
         uses: actions/upload-artifact@master
         with:
