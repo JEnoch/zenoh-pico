@@ -56,12 +56,18 @@ jobs:
           fi
           echo "PKG_VERSION=${PKG_VERSION}"
           echo ::set-output name=PKG_VERSION::"${PKG_VERSION}"
+
+          CROSSBUILD_TARGETS=$(sed -n 's/^CROSSBUILD_TARGETS=\(.*\)/\1/p' Makefile | head -n1)
+          echo "CROSSBUILD_TARGETS=$CROSSBUILD_TARGETS"
+          TARGET_MATRIX="{\"target\": [\"${CROSSBUILD_TARGETS// /\",\"}\"]}"
+          echo ::set-output name=TARGET_MATRIX::"${TARGET_MATRIX}"
     outputs:
       GIT_BRANCH: ${{ steps.env.outputs.GIT_BRANCH }}
       GIT_TAG: ${{ steps.env.outputs.GIT_TAG }}
       IS_RELEASE: ${{ steps.env.outputs.IS_RELEASE }}
       ZENOH_VERSION: ${{ steps.env.outputs.ZENOH_VERSION }}
       PKG_VERSION: ${{ steps.env.outputs.PKG_VERSION }}
+      TARGET_MATRIX: ${{ steps.env.outputs.TARGET_MATRIX }}
 
   macos-build:
     name: MacOS build
@@ -96,49 +102,48 @@ jobs:
             ${{ steps.package.outputs.EXP_PKG_NAME }}
 
   linux-builds:
-    name: Linux crossbuilds
+    name: Crossbuild for ${{ matrix.target }}
     needs: preps
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{fromJson(needs.preps.outputs.matrix)}}
     steps:
       - uses: actions/checkout@v2
-      - name: Linux crossbuilds
+      - name: make for ${{ matrix.target }}
         env:
           BUILD_TYPE: RELEASE
-        run: make crossbuilds
+        run: make ${{ matrix.target }}
       - name: Packaging
         id: package
         shell: bash
         run: |
-          BASE_DIR=${PWD}
-          echo "Get source package from crossbuilds/linux-x64/packages/*-src-*.tar.gz"
-          cp crossbuilds/linux-x64/packages/*-src-*.tar.gz .
-
+          TARGET=${{ matrix.target }}
+          LIB_PKG_NAME=${PWD}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}.zip
+          DEB_PKG_NAME=${PWD}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-deb-pkgs.zip
+          RPM_PKG_NAME=${PWD}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-rpm-pkgs.zip
+          EXP_PKG_NAME=${PWD}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-examples.zip
           cd crossbuilds
-          ls -al
-          for TARGET in *; do
-            LIB_PKG_NAME=${BASE_DIR}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}.zip
-            echo "Packaging ${LIB_PKG_NAME}:"
-            cd ${TARGET} && zip -r ${LIB_PKG_NAME} lib && cd -
-            cd .. && zip -r ${LIB_PKG_NAME} include && cd -
 
-            DEB_PKG_NAME=${BASE_DIR}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-deb-pkgs.zip
-            RPM_PKG_NAME=${BASE_DIR}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-rpm-pkgs.zip
-            cd ${TARGET}/packages
-            echo "Packaging ${DEB_PKG_NAME}:"
-            zip ${DEB_PKG_NAME} *.deb
-            echo "Packaging ${RPM_PKG_NAME}:"
-            zip ${RPM_PKG_NAME} *.rpm
-            cd -
+          echo "Packaging ${LIB_PKG_NAME}:"
+          cd ${TARGET} && zip -r ${LIB_PKG_NAME} lib && cd -
+          cd .. && zip -r ${LIB_PKG_NAME} include && cd -
 
-            EXP_PKG_NAME=${BASE_DIR}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-examples.zip
-            echo "Packaging ${EXP_PKG_NAME}:"
-            cd ${TARGET}/examples && zip ${EXP_PKG_NAME} * && cd -
-          done
-          cd ..
-      - name: "Upload crossbuilds packages"
+          cd ${TARGET}/packages 
+          echo "Packaging ${DEB_PKG_NAME}:"
+          zip ${DEB_PKG_NAME} *.deb
+          echo "Packaging ${RPM_PKG_NAME}:"
+          zip ${RPM_PKG_NAME} *.rpm
+          cd -
+
+          echo "Packaging ${EXP_PKG_NAME}:"
+          cd ${TARGET}/examples && zip ${EXP_PKG_NAME} * && cd -
+      - name: "Upload packages"
         uses: actions/upload-artifact@master
         with:
-          name: crossbuilds
+          name: ${{ matrix.target }}
           path: |
-            *.zip
-            *-src-*.tar.gz
+            ${{ steps.package.outputs.LIB_PKG_NAME }}
+            ${{ steps.package.outputs.DEBS_PKG_NAME }}
+            ${{ steps.package.outputs.RPM_PKG_NAME }}
+            ${{ steps.package.outputs.EXP_PKG_NAME }}
