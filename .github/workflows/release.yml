@@ -133,22 +133,22 @@ jobs:
           cd crossbuilds/${TARGET}/packages
           echo "Packaging ${DEB_PKG_NAME}:"
           zip ../../../${DEB_PKG_NAME} *.deb
-          echo ::set-output name=LIB_PKG_NAME::"${DEB_PKG_NAME}"
+          echo ::set-output name=DEB_PKG_NAME::"${DEB_PKG_NAME}"
           echo "Packaging ${RPM_PKG_NAME}:"
           zip ../../../${RPM_PKG_NAME} *.rpm
-          echo ::set-output name=LIB_PKG_NAME::"${RPM_PKG_NAME}"
+          echo ::set-output name=RPM_PKG_NAME::"${RPM_PKG_NAME}"
           cd -
 
           echo "Packaging ${EXP_PKG_NAME}:"
           cd crossbuilds/${TARGET}/examples && zip ../../../${EXP_PKG_NAME} * && cd -
-          echo ::set-output name=LIB_PKG_NAME::"${EXP_PKG_NAME}"
+          echo ::set-output name=EXP_PKG_NAME::"${EXP_PKG_NAME}"
       - name: "Upload packages"
         uses: actions/upload-artifact@master
         with:
           name: ${{ matrix.target }}
           path: |
             ${{ steps.package.outputs.LIB_PKG_NAME }}
-            ${{ steps.package.outputs.DEBS_PKG_NAME }}
+            ${{ steps.package.outputs.DEB_PKG_NAME }}
             ${{ steps.package.outputs.RPM_PKG_NAME }}
             ${{ steps.package.outputs.EXP_PKG_NAME }}
 
