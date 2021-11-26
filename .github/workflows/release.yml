@@ -60,6 +60,7 @@ jobs:
           CROSSBUILD_TARGETS=$(sed -n 's/^CROSSBUILD_TARGETS=\(.*\)/\1/p' Makefile | head -n1)
           echo "CROSSBUILD_TARGETS=$CROSSBUILD_TARGETS"
           TARGET_MATRIX="{\"target\": [\"${CROSSBUILD_TARGETS// /\",\"}\"]}"
+          echo "TARGET_MATRIX=$TARGET_MATRIX"
           echo ::set-output name=TARGET_MATRIX::"${TARGET_MATRIX}"
     outputs:
       GIT_BRANCH: ${{ steps.env.outputs.GIT_BRANCH }}
@@ -107,7 +108,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
-      matrix: ${{fromJson(needs.preps.outputs.matrix)}}
+      matrix: ${{fromJson(needs.preps.outputs.TARGET_MATRIX)}}
     steps:
       - uses: actions/checkout@v2
       - name: make for ${{ matrix.target }}
