@@ -155,7 +155,7 @@ jobs:
   publication:
     name: Publish the release
     #if: needs.checks.outputs.IS_RELEASE == 'true'
-    needs: [checks, macos-builds, linux-builds]
+    needs: [preps, macos-builds, linux-builds]
     runs-on: ubuntu-latest
     steps:
       - name: Download result of previous builds
