@@ -65,7 +65,7 @@ jobs:
 
   macos-build:
     name: MacOS build
-    needs: checks
+    needs: preps
     runs-on: macos-10.15
     steps:
       - uses: actions/checkout@v2
@@ -77,13 +77,13 @@ jobs:
         id: package
         shell: bash
         run: |
-          LIB_PKG_NAME=${PWD}/macos-x64-zenoh-pico-${{ needs.checks.outputs.PKG_VERSION }}.zip
+          LIB_PKG_NAME=${PWD}/macos-x64-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}.zip
           echo "Packaging ${LIB_PKG_NAME}:"
           cd build && zip -r ${LIB_PKG_NAME} lib && cd -
           zip -r ${LIB_PKG_NAME} include
           echo ::set-output name=LIB_PKG_NAME::"${LIB_PKG_NAME}"
 
-          EXP_PKG_NAME=${PWD}/macos-x64-zenoh-pico-${{ needs.checks.outputs.PKG_VERSION }}-examples.zip
+          EXP_PKG_NAME=${PWD}/macos-x64-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-examples.zip
           echo "Packaging ${EXP_PKG_NAME}:"
           cd build/examples && zip ../../${EXP_PKG_NAME} * && cd -
           echo ::set-output name=EXP_PKG_NAME::"${EXP_PKG_NAME}"
@@ -97,7 +97,7 @@ jobs:
 
   linux-builds:
     name: Linux crossbuilds
-    needs: checks
+    needs: preps
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -116,13 +116,13 @@ jobs:
           cd crossbuilds
           ls -al
           for TARGET in *; do
-            LIB_PKG_NAME=${BASE_DIR}/${TARGET}-zenoh-pico-${{ needs.checks.outputs.PKG_VERSION }}.zip
+            LIB_PKG_NAME=${BASE_DIR}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}.zip
             echo "Packaging ${LIB_PKG_NAME}:"
             cd ${TARGET} && zip -r ${LIB_PKG_NAME} lib && cd -
             cd .. && zip -r ${LIB_PKG_NAME} include && cd -
 
-            DEB_PKG_NAME=${BASE_DIR}/${TARGET}-zenoh-pico-${{ needs.checks.outputs.PKG_VERSION }}-deb-pkgs.zip
-            RPM_PKG_NAME=${BASE_DIR}/${TARGET}-zenoh-pico-${{ needs.checks.outputs.PKG_VERSION }}-rpm-pkgs.zip
+            DEB_PKG_NAME=${BASE_DIR}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-deb-pkgs.zip
+            RPM_PKG_NAME=${BASE_DIR}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-rpm-pkgs.zip
             cd ${TARGET}/packages
             echo "Packaging ${DEB_PKG_NAME}:"
             zip ${DEB_PKG_NAME} *.deb
@@ -130,7 +130,7 @@ jobs:
             zip ${RPM_PKG_NAME} *.rpm
             cd -
 
-            EXP_PKG_NAME=${BASE_DIR}/${TARGET}-zenoh-pico-${{ needs.checks.outputs.PKG_VERSION }}-examples.zip
+            EXP_PKG_NAME=${BASE_DIR}/${TARGET}-zenoh-pico-${{ needs.preps.outputs.PKG_VERSION }}-examples.zip
             echo "Packaging ${EXP_PKG_NAME}:"
             cd ${TARGET}/examples && zip ${EXP_PKG_NAME} * && cd -
           done
